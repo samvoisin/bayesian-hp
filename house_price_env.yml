@@ -1,0 +1,21 @@
+name: house_price_pymc3
+channels:
+  - conda-forge
+dependencies:
+  - arviz
+  - python-graphviz
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - pylint
+  - pymc3
+  - python=3.8
+  - scipy
+  - seaborn
+  - scikit-learn
+  - xarray
+  - pip:
+    - ipython
+    - jedi==0.17.2
+    - jupyter
