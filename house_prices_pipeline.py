@@ -17,7 +17,7 @@ from sklearn.model_selection import train_test_split
 
 
 # read data
-fp = os.path.abspath('model_set.csv')
+fp = os.path.abspath('./dataset/model_set.csv')
 raw_df = pd.read_csv(fp)
 
 # feature engineering
