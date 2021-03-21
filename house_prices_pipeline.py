@@ -20,11 +20,15 @@ from sklearn.model_selection import train_test_split
 fp = os.path.abspath('model_set.csv')
 raw_df = pd.read_csv(fp)
 
-# data transforms
+# feature engineering
 raw_df["LogSalePrice"] = np.log(raw_df.SalePrice)
 raw_df.CentralAir = [1 if i == "Y" else 0 for i in raw_df.CentralAir]
+raw_df["StoneVnr"] = [1 if i == "Stone" else 0 for i in raw_df.MasVnrType]
+kitch_qual_conv = {"Ex": 3, "Gd": 2, "TA": 1, "Fa": 0}
+raw_df.KitchenQual = [kitch_qual_conv[i] for i in raw_df.KitchenQual]
 raw_df.YrSold = raw_df.YrSold - raw_df.YrSold.min()  # years from 2006
 raw_df.YearBuilt = raw_df.YearBuilt - raw_df.YearBuilt.min()  # years from 1872
+raw_df.YearRemodAdd = raw_df.YearRemodAdd - raw_df.YearRemodAdd.min()  # years from 1950
 Neighborhoods = raw_df.Neighborhood.unique()
 NbdLookup = dict(zip(Neighborhoods, range(Neighborhoods.size)))
 raw_df["NeighborhoodCode"] = raw_df.Neighborhood.replace(NbdLookup)
@@ -36,7 +40,7 @@ raw_df.drop(columns=d_cols, inplace=True)
 ### data preparation and formatting ###
 
 # design matix
-covariates = ("1stFlrSF", "LotArea")
+covariates = ("1stFlrSF", "LotArea", "StoneVnr", "KitchenQual")
 y = raw_df.LogSalePrice
 X = raw_df.loc[:, covariates]
 X_nbd = raw_df.loc[:, "NeighborhoodCode"]
@@ -86,7 +90,7 @@ with hp_model:
     Ey_x = T.add(alpha_nbd[nbd_idx], X_train_data.dot(beta))  # E[Y|X]
     y_obs = pm.Normal("y_obs", mu=Ey_x, sigma=sigma, observed=y_train_data)
     # sampling
-    posterior = pm.sample(draws=5000, tune=20000, cores=4,
+    posterior = pm.sample(draws=5000, tune=150000, cores=3,
                           init="advi+adapt_diag",
                           target_accept=0.95,
                           return_inferencedata=False)
