@@ -64,19 +64,15 @@ docs/_build/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# vscode
+.vscode
+
 # IPython
 profile_default/
 ipython_config.py
 
 # pyenv
 .python-version
-
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# SageMath parsed files
-*.sage.py
 
 # Environments
 .env

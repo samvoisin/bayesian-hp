@@ -1,4 +1,4 @@
-name: house_price_pymc3
+name: house_price
 channels:
   - conda-forge
 dependencies:
