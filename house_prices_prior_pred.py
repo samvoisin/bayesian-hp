@@ -30,6 +30,7 @@ raw_df.YrSold = raw_df.YrSold - raw_df.YrSold.min()  # years from 2006
 raw_df.YearBuilt = raw_df.YearBuilt - raw_df.YearBuilt.min()  # years from 1872
 raw_df.YearRemodAdd = raw_df.YearRemodAdd - raw_df.YearRemodAdd.min()  # years from 1950
 Neighborhoods = raw_df.Neighborhood.unique()
+Neighborhoods.sort()
 NbdLookup = dict(zip(Neighborhoods, range(Neighborhoods.size)))
 raw_df["NeighborhoodCode"] = raw_df.Neighborhood.replace(NbdLookup)
 
@@ -72,12 +73,11 @@ with hp_model:
     y_train_data = pm.Data("y_train_data", y_train)
     # hyper priors
     chol, corr, stds = pm.LKJCholeskyCov("Omega", n=p, eta=1.,
-                                         sd_dist=pm.HalfStudentT.dist(sigma=0.5,
-                                                                      nu=1.),
+                                         sd_dist=pm.Gamma.dist(alpha=7.5, beta=1.0),
                                          compute_corr=True)
     cov = pm.Deterministic("cov", chol.dot(chol.T))
-    tau_alpha = pm.HalfStudentT("tau_alpha", sigma=0.5, nu=1.)
-    alpha = pm.Normal("alpha", mu=12., sigma=0.5)
+    tau_alpha = pm.Gamma("tau_alpha", alpha=7.5, beta=1.0)
+    alpha = pm.Normal("alpha", mu=12., sigma=np.sqrt(1/tau_alpha))
     # priors
     alpha_nbd = pm.Normal("alpha_nbd",
                           mu=alpha,
@@ -90,7 +90,7 @@ with hp_model:
     Ey_x = T.add(alpha_nbd[nbd_idx], X_train_data.dot(beta))  # E[Y|X]
     y_obs = pm.Normal("y_obs", mu=Ey_x, sigma=sigma, observed=y_train_data)
     # sampling
-    prior_pred = pm.sample_prior_predictive(samples=1000, random_seed=1)
+    prior_pred = pm.sample_prior_predictive(samples=100, random_seed=1)
 
 # save model
 with open("prior_pred_samps.pkl", "wb") as fh:

@@ -30,6 +30,7 @@ raw_df.YrSold = raw_df.YrSold - raw_df.YrSold.min()  # years from 2006
 raw_df.YearBuilt = raw_df.YearBuilt - raw_df.YearBuilt.min()  # years from 1872
 raw_df.YearRemodAdd = raw_df.YearRemodAdd - raw_df.YearRemodAdd.min()  # years from 1950
 Neighborhoods = raw_df.Neighborhood.unique()
+Neighborhoods.sort()
 NbdLookup = dict(zip(Neighborhoods, range(Neighborhoods.size)))
 raw_df["NeighborhoodCode"] = raw_df.Neighborhood.replace(NbdLookup)
 
@@ -72,12 +73,12 @@ with hp_model:
     y_train_data = pm.Data("y_train_data", y_train)
     # hyper priors
     chol, corr, stds = pm.LKJCholeskyCov("Omega", n=p, eta=1.,
-                                         sd_dist=pm.HalfStudentT.dist(sigma=0.5,
-                                                                      nu=1.),
+                                         sd_dist=pm.Gamma.dist(alpha=3, beta=1),
                                          compute_corr=True)
     cov = pm.Deterministic("cov", chol.dot(chol.T))
-    tau_alpha = pm.HalfStudentT("tau_alpha", sigma=0.5, nu=1.)
-    alpha = pm.Normal("alpha", mu=12., sigma=0.5)
+    tau_alpha_draw = pm.Gamma("tau_alpha_draw", alpha=3., beta=1.)
+    tau_alpha = pm.Deterministic("tau_alpha", np.sqrt(1/tau_alpha_draw))
+    alpha = pm.Normal("alpha", mu=12., sigma=tau_alpha)
     # priors
     alpha_nbd = pm.Normal("alpha_nbd",
                           mu=alpha,
@@ -90,7 +91,7 @@ with hp_model:
     Ey_x = T.add(alpha_nbd[nbd_idx], X_train_data.dot(beta))  # E[Y|X]
     y_obs = pm.Normal("y_obs", mu=Ey_x, sigma=sigma, observed=y_train_data)
     # sampling
-    posterior = pm.sample(draws=5000, tune=150000, cores=3,
+    posterior = pm.sample(draws=5000, tune=100000, cores=3,
                           init="advi+adapt_diag",
                           target_accept=0.95,
                           return_inferencedata=False)
